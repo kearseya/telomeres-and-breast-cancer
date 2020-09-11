@@ -284,3 +284,38 @@ for (m in pred_clin_2 %>% select(contains("pred")) %>% colnames()) {
 (170 + 172 + 159 + 171 + 150)/5
 (167 + 165 + 164 + 111 + 154)/5
 
+
+
+
+# stratification by single variables
+
+pred_clin <- mutate(pred_clin, strat_npi =  case_when(pred_clin$`NPI SCORE` > 4.4 ~ 1, 
+                                                      pred_clin$`NPI SCORE` <= 4.4 ~ 2))
+
+pred_clin <- mutate(pred_clin, strat_ttl =  case_when(pred_clin$Mean <= 3.81 ~ 1, 
+                                                      pred_clin$Mean > 3.81 ~ 2))
+
+# pred_clin$strat_npi
+# pred_clin$strat_ttl                    
+
+surv_data_strat_npi <- pred_clin
+surv_data_strat_npi <- surv_data_strat_npi %>% filter(strat_npi %in% c("1", "2"))
+surv_obj_strat_npi <- Surv(time = surv_data_strat_npi$`Operation to follow/death (days)`, event = surv_data_strat_npi$`Censoring Status`)
+surv_fit_strat_npi <- survfit(surv_obj_strat_npi ~ strat_npi, data = surv_data_strat_npi)
+
+ggsurvplot(surv_fit_strat_npi, data = surv_data_strat_npi, pval = TRUE, pval.method = TRUE, conf.int = TRUE)
+
+
+surv_data_strat_ttl <- pred_clin
+surv_data_strat_ttl <- surv_data_strat_ttl %>% filter(strat_ttl %in% c("1", "2"))
+surv_obj_strat_ttl <- Surv(time = surv_data_strat_ttl$`Operation to follow/death (days)`, event = surv_data_strat_ttl$`Censoring Status`)
+surv_fit_strat_ttl <- survfit(surv_obj_strat_ttl ~ strat_ttl, data = surv_data_strat_ttl)
+
+ggsurvplot(surv_fit_strat_ttl, data = surv_data_strat_ttl, pval = TRUE, pval.method = TRUE, conf.int = TRUE)
+
+nrow(pred_clin %>% filter(strat_npi == 1))
+nrow(pred_clin %>% filter(strat_npi == 2))
+nrow(pred_clin %>% filter(strat_ttl == 1))
+nrow(pred_clin %>% filter(strat_ttl == 2))
+
+
