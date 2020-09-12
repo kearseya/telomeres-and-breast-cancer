@@ -319,3 +319,45 @@ nrow(pred_clin %>% filter(strat_ttl == 1))
 nrow(pred_clin %>% filter(strat_ttl == 2))
 
 
+
+## Stratify NPI into 3 "clusters"
+pred_clin <- mutate(pred_clin, strat_npi =  case_when(4.4 < pred_clin$`NPI SCORE` & pred_clin$`NPI SCORE` <= 5.1 ~ "1a", 
+                                                      pred_clin$`NPI SCORE` <= 4.4 ~ "2",
+                                                      pred_clin$`NPI SCORE` > 5.1 ~ "1b"))
+
+surv_data_strat_npi <- pred_clin
+surv_data_strat_npi <- surv_data_strat_npi %>% filter(strat_npi %in% c("1a", "1b", "2"))
+surv_obj_strat_npi <- Surv(time = surv_data_strat_npi$`Operation to follow/death (days)`, event = surv_data_strat_npi$`Censoring Status`)
+surv_fit_strat_npi <- survfit(surv_obj_strat_npi ~ strat_npi, data = surv_data_strat_npi)
+
+ggsurvplot(surv_fit_strat_npi, data = surv_data_strat_npi, pval = TRUE, pval.method = TRUE, conf.int = TRUE)
+
+
+
+surv_data_strat_npi_1a_1b <- surv_data_strat_npi %>% filter(strat_npi %in% c("1a", "1b"))
+surv_obj_strat_npi_1a_1b <- Surv(time = surv_data_strat_npi_1a_1b$`Operation to follow/death (days)`, event = surv_data_strat_npi_1a_1b$`Censoring Status`)
+surv_fit_strat_npi_1a_1b <- survfit(surv_obj_strat_npi_1a_1b ~ strat_npi, data = surv_data_strat_npi_1a_1b)
+
+ggsurvplot(surv_fit_strat_npi_1a_1b, data = surv_data_strat_npi_1a_1b, pval = TRUE, pval.method = TRUE, conf.int = TRUE, palette = surv_colours[c(1, 2)])
+
+
+surv_data_strat_npi_1a_2 <- surv_data_strat_npi %>% filter(strat_npi %in% c("1a", "2"))
+surv_obj_strat_npi_1a_2 <- Surv(time = surv_data_strat_npi_1a_2$`Operation to follow/death (days)`, event = surv_data_strat_npi_1a_2$`Censoring Status`)
+surv_fit_strat_npi_1a_2 <- survfit(surv_obj_strat_npi_1a_2 ~ strat_npi, data = surv_data_strat_npi_1a_2)
+
+ggsurvplot(surv_fit_strat_npi_1a_2, data = surv_data_strat_npi_1a_2, pval = TRUE, pval.method = TRUE, conf.int = TRUE, palette = surv_colours[c(1, 3)])
+
+
+surv_data_strat_npi_1b_2 <- surv_data_strat_npi %>% filter(strat_npi %in% c("1b", "2"))
+surv_obj_strat_npi_1b_2 <- Surv(time = surv_data_strat_npi_1b_2$`Operation to follow/death (days)`, event = surv_data_strat_npi_1b_2$`Censoring Status`)
+surv_fit_strat_npi_1b_2 <- survfit(surv_obj_strat_npi_1b_2 ~ strat_npi, data = surv_data_strat_npi_1b_2)
+
+ggsurvplot(surv_fit_strat_npi_1b_2, data = surv_data_strat_npi_1b_2, pval = TRUE, pval.method = TRUE, conf.int = TRUE, palette = surv_colours[c(2, 3)])
+
+
+
+nrow(pred_clin %>% filter(strat_npi == "1a"))
+nrow(pred_clin %>% filter(strat_npi == "1b"))
+nrow(pred_clin %>% filter(strat_npi == "2"))
+
+
