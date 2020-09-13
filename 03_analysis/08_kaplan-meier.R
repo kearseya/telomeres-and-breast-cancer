@@ -1,7 +1,7 @@
 library(survival)
 library(survminer)
 
-pred <- read_csv("/path/to/project/data/clf_mode_pred_cl_w_mode_n3.csv")
+pred <- read_csv("/path/to/project/data/clf_mode_pred_cl_w_mode_3.csv")
 pred <- rename(pred, cl_members=mode_pred)
 
 pred_clin <- left_join(clin %>% filter(!tumor_db %in% all$tumor_db), pred) 
@@ -56,6 +56,9 @@ surv_fit_clf_1a_1b <- survfit(surv_obj_clf_1a_1b ~ cl_members, data = surv_data_
 
 ggsurvplot(surv_fit_clf_1a_1b, data = surv_data_clf_1a_1b, pval = TRUE, pval.method = TRUE, conf.int = TRUE, palette = surv_colours[c(1, 2)])
 
+
+
+#telomere stratifies the NPI scores
 
 # length(intersect(clin$Mean, all$tumor_stela))
 # nrow(clin) - nrow(clin %>% filter(is.na(Mean)))
@@ -205,7 +208,7 @@ k <- 2
 test <- hclust_apply(k, cl_metric, variables_for_hclust, binary_variables, add_cl_all = TRUE)
 
 
-pred_2 <- read_csv("/path/to/project/data/clf_mode_pred_cl_n2.csv")
+pred_2 <- read_csv("/home/alex/Desktop/uni/diss/data/clf_mode_pred_cl_n2_w_mode_3.csv")
 pred_2 <- rename(pred_2, cl_members=mode_pred)
 
 pred_clin_2 <- left_join(clin %>% filter(!tumor_db %in% all$tumor_db), pred_2) 
@@ -287,27 +290,23 @@ for (m in pred_clin_2 %>% select(contains("pred")) %>% colnames()) {
 
 
 
-# stratification by single variables
+# stratifying by sinlge variables
+surv_data_clf_s <- mutate(surv_data_clf, strat_npi =  case_when(`NPI SCORE` > 4.4 ~ 1, 
+                                                                `NPI SCORE` <= 4.4 ~ 2))
 
-pred_clin <- mutate(pred_clin, strat_npi =  case_when(pred_clin$`NPI SCORE` > 4.4 ~ 1, 
-                                                      pred_clin$`NPI SCORE` <= 4.4 ~ 2))
+surv_data_clf_s <- mutate(surv_data_clf_s, strat_ttl =  case_when(Mean <= 3.81 ~ 1, 
+                                                                Mean > 3.81 ~ 2))
+                 
 
-pred_clin <- mutate(pred_clin, strat_ttl =  case_when(pred_clin$Mean <= 3.81 ~ 1, 
-                                                      pred_clin$Mean > 3.81 ~ 2))
 
-# pred_clin$strat_npi
-# pred_clin$strat_ttl                    
-
-surv_data_strat_npi <- pred_clin
-surv_data_strat_npi <- surv_data_strat_npi %>% filter(strat_npi %in% c("1", "2"))
+surv_data_strat_npi <- surv_data_clf_s %>% filter(strat_npi %in% c("1", "2"))
 surv_obj_strat_npi <- Surv(time = surv_data_strat_npi$`Operation to follow/death (days)`, event = surv_data_strat_npi$`Censoring Status`)
 surv_fit_strat_npi <- survfit(surv_obj_strat_npi ~ strat_npi, data = surv_data_strat_npi)
 
 ggsurvplot(surv_fit_strat_npi, data = surv_data_strat_npi, pval = TRUE, pval.method = TRUE, conf.int = TRUE)
 
 
-surv_data_strat_ttl <- pred_clin
-surv_data_strat_ttl <- surv_data_strat_ttl %>% filter(strat_ttl %in% c("1", "2"))
+surv_data_strat_ttl <- surv_data_clf_s %>% filter(strat_ttl %in% c("1", "2"))
 surv_obj_strat_ttl <- Surv(time = surv_data_strat_ttl$`Operation to follow/death (days)`, event = surv_data_strat_ttl$`Censoring Status`)
 surv_fit_strat_ttl <- survfit(surv_obj_strat_ttl ~ strat_ttl, data = surv_data_strat_ttl)
 
@@ -320,13 +319,12 @@ nrow(pred_clin %>% filter(strat_ttl == 2))
 
 
 
-## Stratify NPI into 3 "clusters"
-pred_clin <- mutate(pred_clin, strat_npi =  case_when(4.4 < pred_clin$`NPI SCORE` & pred_clin$`NPI SCORE` <= 5.1 ~ "1a", 
-                                                      pred_clin$`NPI SCORE` <= 4.4 ~ "2",
-                                                      pred_clin$`NPI SCORE` > 5.1 ~ "1b"))
+#NPI strat k=3
+surv_data_clf_s <- mutate(surv_data_clf, strat_npi =  case_when(4.4 < `NPI SCORE` & `NPI SCORE` <= 5.1 ~ "1a", 
+                                                                `NPI SCORE` <= 4.4 ~ "2",
+                                                                `NPI SCORE` > 5.1 ~ "1b"))
 
-surv_data_strat_npi <- pred_clin
-surv_data_strat_npi <- surv_data_strat_npi %>% filter(strat_npi %in% c("1a", "1b", "2"))
+surv_data_strat_npi <- surv_data_clf_s %>% filter(strat_npi %in% c("1a", "1b", "2"))
 surv_obj_strat_npi <- Surv(time = surv_data_strat_npi$`Operation to follow/death (days)`, event = surv_data_strat_npi$`Censoring Status`)
 surv_fit_strat_npi <- survfit(surv_obj_strat_npi ~ strat_npi, data = surv_data_strat_npi)
 
@@ -359,5 +357,4 @@ ggsurvplot(surv_fit_strat_npi_1b_2, data = surv_data_strat_npi_1b_2, pval = TRUE
 nrow(pred_clin %>% filter(strat_npi == "1a"))
 nrow(pred_clin %>% filter(strat_npi == "1b"))
 nrow(pred_clin %>% filter(strat_npi == "2"))
-
 
